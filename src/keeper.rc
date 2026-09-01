@@ -1,0 +1,32 @@
+#include <windows.h>
+
+#include "version.h"
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION FUCK_HELIUM_VERSION_MAJOR,FUCK_HELIUM_VERSION_MINOR,FUCK_HELIUM_VERSION_PATCH,0
+ PRODUCTVERSION FUCK_HELIUM_VERSION_MAJOR,FUCK_HELIUM_VERSION_MINOR,FUCK_HELIUM_VERSION_PATCH,0
+ FILEFLAGSMASK 0x3fL
+ FILEFLAGS 0x0L
+ FILEOS 0x40004L
+ FILETYPE 0x1L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904b0"
+        BEGIN
+            VALUE "CompanyName", "fuck-helium contributors"
+            VALUE "FileDescription", "fuck-helium update guard"
+            VALUE "FileVersion", FUCK_HELIUM_VERSION_STRING
+            VALUE "InternalName", "fuck-helium-keeper.exe"
+            VALUE "OriginalFilename", "fuck-helium-keeper.exe"
+            VALUE "ProductName", "fuck-helium"
+            VALUE "ProductVersion", FUCK_HELIUM_VERSION_STRING
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1200
+    END
+END
+

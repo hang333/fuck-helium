@@ -1,0 +1,23 @@
+# Reference repositories kept beside this project.
+/chrome_plus/
+/helium-windows/
+
+# Local Chromium sources downloaded while investigating the hook.
+/app_menu_model.cc
+/chrome_command_ids.h
+/simple_menu_model.cc
+/simple_menu_model.h
+
+# Build products.
+/build/
+/out/
+/.runtime-test/
+/.vs/
+/CMakeSettings.json
+*.user
+*.suo
+*.pdb
+
+# Runtime logs and installer scratch files.
+*.log
+*.tmp

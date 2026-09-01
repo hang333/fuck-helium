@@ -51,8 +51,15 @@ jobs:
           }
 
           git fetch --tags --force
-          git rev-parse --verify --quiet "refs/tags/$version"
-          if ($LASTEXITCODE -eq 0) {
+          if ($LASTEXITCODE -ne 0) {
+            throw 'Failed to fetch existing release tags.'
+          }
+
+          $existingTags = @(git tag --list $version)
+          if ($LASTEXITCODE -ne 0) {
+            throw 'Failed to inspect existing release tags.'
+          }
+          if ($existingTags -contains $version) {
             throw "Tag $version already exists. A date can be released once."
           }
 

@@ -74,6 +74,8 @@ jobs:
           Copy-Item -LiteralPath 'out/x64/release/fuck-helium-keeper.exe' $stage
           Copy-Item -LiteralPath 'scripts/install.ps1' $stage
           Copy-Item -LiteralPath 'scripts/uninstall.ps1' $stage
+          Copy-Item -LiteralPath 'install.cmd' $stage
+          Copy-Item -LiteralPath 'uninstall.cmd' $stage
           Copy-Item -LiteralPath 'README.md' $stage
           Copy-Item -LiteralPath 'LICENSE' $stage
 

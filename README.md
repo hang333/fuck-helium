@@ -57,11 +57,25 @@ input can be used to publish a specific date.
 
 ## Install
 
-Run the packaged `install.ps1`, or from the repository after building:
+Run the packaged `install.cmd` by double-clicking it, or from the repository
+after building:
+
+```powershell
+.\build.cmd
+.\out\x64\release\install.cmd
+```
+
+`install.cmd` starts PowerShell with `ExecutionPolicy Bypass` and keeps the
+window open so errors remain visible. The `.ps1` file is still available for
+automation, for example:
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install.ps1
 ```
+
+Do not use Explorer's **Run with PowerShell** command for this project when
+the machine's execution policy is `Restricted`; Windows rejects the script
+before any code can display an error or pause the window.
 
 The script detects the per-user or system Helium installation. A system install
 requires elevation. It refuses to overwrite an unrelated `version.dll` unless
@@ -90,8 +104,11 @@ Use `-NoUpdateGuard` during installation to opt out of the scheduled task.
 ## Uninstall
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\uninstall.ps1
+.\out\x64\release\uninstall.cmd
 ```
+
+For automation, invoke `uninstall.ps1` with `ExecutionPolicy Bypass` as shown
+for the installer.
 
 The uninstaller removes `Application\version.dll` only when its SHA-256 hash
 matches the canonical DLL installed by this project.

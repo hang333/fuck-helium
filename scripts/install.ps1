@@ -2,10 +2,49 @@
 param(
     [string]$Target,
     [switch]$NoUpdateGuard,
-    [switch]$Force
+    [switch]$Force,
+    [switch]$Pause
 )
 
 $ErrorActionPreference = 'Stop'
+$script:ExitCode = 1
+
+function Test-ExplorerLaunch {
+    foreach ($argument in [Environment]::GetCommandLineArgs()) {
+        $trimmed = $argument.Trim()
+        if ($argument -ne $trimmed -and $trimmed -ieq $PSCommandPath) {
+            return $true
+        }
+    }
+    try {
+        $current = Get-CimInstance -ClassName Win32_Process -Filter "ProcessId = $PID" -ErrorAction Stop
+        if ($current.ParentProcessId) {
+            $parent = Get-Process -Id $current.ParentProcessId -ErrorAction Stop
+            return $parent.ProcessName -ieq 'explorer'
+        }
+    } catch {
+        # Parent-process inspection is only a convenience for Explorer launches.
+    }
+    return $false
+}
+
+$script:PauseOnExit = $Pause -or (Test-ExplorerLaunch)
+
+function Wait-IfNeeded {
+    if ($script:PauseOnExit) {
+        Write-Host ''
+        Read-Host 'Press Enter to close this window' | Out-Null
+    }
+}
+
+trap {
+    Write-Host "`nERROR: $($_.Exception.Message)" -ForegroundColor Red
+    if ($_.ScriptStackTrace) {
+        Write-Host $_.ScriptStackTrace -ForegroundColor DarkRed
+    }
+    Wait-IfNeeded
+    exit $script:ExitCode
+}
 
 function Find-Artifact([string]$Name) {
     $locations = @(
@@ -41,6 +80,7 @@ if ($isSystemInstall -and -not (Test-Administrator)) {
     $arguments = @('-NoLogo', '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', "`"$PSCommandPath`"", '-Target', "`"$Target`"")
     if ($NoUpdateGuard) { $arguments += '-NoUpdateGuard' }
     if ($Force) { $arguments += '-Force' }
+    if ($script:PauseOnExit) { $arguments += '-Pause' }
     $process = Start-Process powershell.exe -Verb RunAs -ArgumentList $arguments -Wait -PassThru
     exit $process.ExitCode
 }
@@ -90,3 +130,4 @@ Write-Host 'Restart Helium completely before testing the menu.'
 if (-not $NoUpdateGuard) {
     Write-Host 'The update guard is active and will restore version.dll if an updater removes it.'
 }
+Wait-IfNeeded

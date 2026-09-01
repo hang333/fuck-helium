@@ -1,7 +1,49 @@
 [CmdletBinding()]
-param([string]$Target)
+param(
+    [string]$Target,
+    [switch]$Pause
+)
 
 $ErrorActionPreference = 'Stop'
+$script:ExitCode = 1
+
+function Test-ExplorerLaunch {
+    foreach ($argument in [Environment]::GetCommandLineArgs()) {
+        $trimmed = $argument.Trim()
+        if ($argument -ne $trimmed -and $trimmed -ieq $PSCommandPath) {
+            return $true
+        }
+    }
+    try {
+        $current = Get-CimInstance -ClassName Win32_Process -Filter "ProcessId = $PID" -ErrorAction Stop
+        if ($current.ParentProcessId) {
+            $parent = Get-Process -Id $current.ParentProcessId -ErrorAction Stop
+            return $parent.ProcessName -ieq 'explorer'
+        }
+    } catch {
+        # Parent-process inspection is only a convenience for Explorer launches.
+    }
+    return $false
+}
+
+$script:PauseOnExit = $Pause -or (Test-ExplorerLaunch)
+
+function Wait-IfNeeded {
+    if ($script:PauseOnExit) {
+        Write-Host ''
+        Read-Host 'Press Enter to close this window' | Out-Null
+    }
+}
+
+trap {
+    Write-Host "`nERROR: $($_.Exception.Message)" -ForegroundColor Red
+    if ($_.ScriptStackTrace) {
+        Write-Host $_.ScriptStackTrace -ForegroundColor DarkRed
+    }
+    Wait-IfNeeded
+    exit $script:ExitCode
+}
+
 function Test-Administrator {
     $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
     $principal = [Security.Principal.WindowsPrincipal]::new($identity)
@@ -20,6 +62,7 @@ if (-not $Target -and $state) {
 $isSystemInstall = $Target -and $Target.StartsWith($env:ProgramFiles, [StringComparison]::OrdinalIgnoreCase)
 if ($isSystemInstall -and -not (Test-Administrator)) {
     $arguments = "-NoLogo -NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`" -Target `"$Target`""
+    if ($script:PauseOnExit) { $arguments += ' -Pause' }
     $process = Start-Process powershell.exe -Verb RunAs -ArgumentList $arguments -Wait -PassThru
     exit $process.ExitCode
 }
@@ -32,8 +75,8 @@ if (Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue) {
 
 if ($Target) {
     $installed = Join-Path $Target 'version.dll'
-    $payload = Join-Path $state 'fuck-helium.dll'
-    if ((Test-Path -LiteralPath $installed) -and (Test-Path -LiteralPath $payload)) {
+    $payload = if ($state) { Join-Path $state 'fuck-helium.dll' }
+    if ((Test-Path -LiteralPath $installed) -and $payload -and (Test-Path -LiteralPath $payload)) {
         if ((Get-FileHash -Algorithm SHA256 -LiteralPath $installed).Hash -eq
             (Get-FileHash -Algorithm SHA256 -LiteralPath $payload).Hash) {
             Remove-Item -LiteralPath $installed -Force
@@ -47,3 +90,4 @@ if ($state -and (Test-Path -LiteralPath $state)) {
     Remove-Item -LiteralPath $state -Recurse -Force
 }
 Write-Host 'fuck-helium has been uninstalled.'
+Wait-IfNeeded

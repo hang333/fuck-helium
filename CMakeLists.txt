@@ -35,6 +35,7 @@ set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
 add_library(fuck_helium SHARED
   src/menu_patch.cc
+  src/process_mitigation.cc
   src/proxy.cc
   src/version.dll.rc
   src/version.def

@@ -1,4 +1,5 @@
 #include "menu_patch.h"
+#include "process_mitigation.h"
 
 #include <windows.h>
 #include <winver.h>
@@ -425,6 +426,7 @@ DWORD WINAPI PatchWorker(void*) {
 
   for (int attempt = 0; attempt < kChromeDllPollCount; ++attempt) {
     if (HMODULE chrome_dll = GetModuleHandleW(L"chrome.dll")) {
+      PatchChromeProcessMitigationImport(chrome_dll);
       LocateAndPatch(chrome_dll);
       return 0;
     }

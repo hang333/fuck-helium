@@ -3,6 +3,7 @@
 #include <string>
 
 #include "menu_patch.h"
+#include "process_mitigation.h"
 
 namespace {
 
@@ -71,6 +72,7 @@ extern "C" BOOL WINAPI ProxyVerQueryValueW(
 BOOL WINAPI DllMain(HINSTANCE instance, DWORD reason, LPVOID) {
   if (reason == DLL_PROCESS_ATTACH) {
     DisableThreadLibraryCalls(instance);
+    InstallProcessMitigationCompatibility();
     StartMenuPatchWorker();
   }
   return TRUE;

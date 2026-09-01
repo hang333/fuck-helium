@@ -112,9 +112,3 @@ for the installer.
 
 The uninstaller removes `Application\version.dll` only when its SHA-256 hash
 matches the canonical DLL installed by this project.
-
-## Repository layout
-
-The local `chrome_plus/` and `helium-windows/` directories are reference
-checkouts and are excluded by `.gitignore`. They are not part of this project or
-its GitHub history.

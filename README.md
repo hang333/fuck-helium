@@ -43,6 +43,18 @@ Install Visual Studio 2022 Build Tools with **Desktop development with C++** and
 
 Artifacts are written to `out\x64\release`.
 
+## Releases
+
+Run the **Release** workflow manually from the GitHub Actions page. When no
+date is supplied, it uses the current date in Malaysia time and creates a
+`YYYY.MM.DD` tag and GitHub Release, for example `2026.09.01`.
+
+The same date version is embedded in `version.dll` and
+`fuck-helium-keeper.exe`. Each release contains an x64 ZIP package and a
+SHA-256 checksum file. A date can be released only once; the workflow fails
+instead of replacing an existing tag or release. The optional `release_date`
+input can be used to publish a specific date.
+
 ## Install
 
 Run the packaged `install.ps1`, or from the repository after building:

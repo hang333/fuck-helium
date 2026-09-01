@@ -1,7 +1,9 @@
 [CmdletBinding()]
 param(
     [ValidateSet('Debug', 'Release')]
-    [string]$Configuration = 'Release'
+    [string]$Configuration = 'Release',
+    [ValidatePattern('^\d+\.\d+\.\d+$')]
+    [string]$Version = '0.1.0'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -22,7 +24,7 @@ if (-not (Test-Path -LiteralPath $cmake)) {
 }
 
 $build = Join-Path $root 'build\x64'
-& $cmake -S $root -B $build -G 'Visual Studio 17 2022' -A x64
+& $cmake -S $root -B $build -G 'Visual Studio 17 2022' -A x64 "-DFUCK_HELIUM_BUILD_VERSION=$Version"
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 & $cmake --build $build --config $Configuration --parallel
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
@@ -34,4 +36,3 @@ Copy-Item -Force (Join-Path $build "$Configuration\fuck-helium-keeper.exe") $out
 Copy-Item -Force (Join-Path $root 'scripts\install.ps1') $output
 Copy-Item -Force (Join-Path $root 'scripts\uninstall.ps1') $output
 Write-Host "Build output: $output"
-

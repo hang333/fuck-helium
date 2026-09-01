@@ -2,6 +2,20 @@ cmake_minimum_required(VERSION 3.21)
 
 project(fuck_helium VERSION 0.1.0 LANGUAGES CXX RC)
 
+set(FUCK_HELIUM_BUILD_VERSION "${PROJECT_VERSION}" CACHE STRING "Version embedded in release binaries")
+if(NOT FUCK_HELIUM_BUILD_VERSION MATCHES "^([0-9]+)\\.([0-9]+)\\.([0-9]+)$")
+  message(FATAL_ERROR "FUCK_HELIUM_BUILD_VERSION must contain three numeric components")
+endif()
+set(FUCK_HELIUM_VERSION_MAJOR "${CMAKE_MATCH_1}")
+set(FUCK_HELIUM_VERSION_MINOR "${CMAKE_MATCH_2}")
+set(FUCK_HELIUM_VERSION_PATCH "${CMAKE_MATCH_3}")
+add_compile_definitions(
+  FUCK_HELIUM_VERSION_MAJOR=${FUCK_HELIUM_VERSION_MAJOR}
+  FUCK_HELIUM_VERSION_MINOR=${FUCK_HELIUM_VERSION_MINOR}
+  FUCK_HELIUM_VERSION_PATCH=${FUCK_HELIUM_VERSION_PATCH}
+  FUCK_HELIUM_VERSION_STRING="${FUCK_HELIUM_BUILD_VERSION}"
+)
+
 if(NOT WIN32)
   message(FATAL_ERROR "fuck-helium only supports Windows.")
 endif()
@@ -55,3 +69,5 @@ target_link_libraries(fuck_helium_keeper PRIVATE shell32)
 set_target_properties(fuck_helium_keeper PROPERTIES
   OUTPUT_NAME "fuck-helium-keeper"
 )
+
+message(STATUS "fuck-helium build version: ${FUCK_HELIUM_BUILD_VERSION}")

@@ -1,0 +1,96 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_date:
+        description: Optional release date in YYYY.MM.DD format
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: windows-2025
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine release version
+        id: version
+        shell: pwsh
+        env:
+          REQUESTED_DATE: ${{ inputs.release_date }}
+        run: |
+          if ($env:REQUESTED_DATE) {
+            $version = $env:REQUESTED_DATE
+          } else {
+            $timeZone = [TimeZoneInfo]::FindSystemTimeZoneById('Singapore Standard Time')
+            $malaysiaTime = [TimeZoneInfo]::ConvertTimeFromUtc([DateTime]::UtcNow, $timeZone)
+            $version = $malaysiaTime.ToString('yyyy.MM.dd')
+          }
+
+          $parsed = [DateTime]::MinValue
+          $valid = [DateTime]::TryParseExact(
+            $version,
+            'yyyy.MM.dd',
+            [Globalization.CultureInfo]::InvariantCulture,
+            [Globalization.DateTimeStyles]::None,
+            [ref]$parsed
+          )
+          if (-not $valid -or $parsed.ToString('yyyy.MM.dd') -ne $version) {
+            throw "Invalid release date '$version'. Use YYYY.MM.DD."
+          }
+
+          git fetch --tags --force
+          git rev-parse --verify --quiet "refs/tags/$version"
+          if ($LASTEXITCODE -eq 0) {
+            throw "Tag $version already exists. A date can be released once."
+          }
+
+          "RELEASE_VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "version=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+
+      - name: Build x64 release
+        shell: pwsh
+        run: ./build.ps1 -Configuration Release -Version $env:RELEASE_VERSION
+
+      - name: Package release
+        shell: pwsh
+        run: |
+          $packageName = "fuck-helium-$env:RELEASE_VERSION-x64"
+          $stage = Join-Path 'dist' $packageName
+          New-Item -ItemType Directory -Force -Path $stage | Out-Null
+
+          Copy-Item -LiteralPath 'out/x64/release/version.dll' $stage
+          Copy-Item -LiteralPath 'out/x64/release/fuck-helium-keeper.exe' $stage
+          Copy-Item -LiteralPath 'scripts/install.ps1' $stage
+          Copy-Item -LiteralPath 'scripts/uninstall.ps1' $stage
+          Copy-Item -LiteralPath 'README.md' $stage
+          Copy-Item -LiteralPath 'LICENSE' $stage
+
+          $archive = Join-Path 'dist' "$packageName.zip"
+          Compress-Archive -Path "$stage/*" -DestinationPath $archive
+          $archiveName = Split-Path $archive -Leaf
+          $hash = (Get-FileHash -Algorithm SHA256 $archive).Hash.ToLower()
+          "$hash  $archiveName" | Set-Content -LiteralPath "$archive.sha256" -Encoding ascii
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.version }}
+          name: fuck-helium ${{ steps.version.outputs.version }}
+          target_commitish: ${{ github.sha }}
+          generate_release_notes: true
+          fail_on_unmatched_files: true
+          files: |
+            dist/fuck-helium-${{ steps.version.outputs.version }}-x64.zip
+            dist/fuck-helium-${{ steps.version.outputs.version }}-x64.zip.sha256
